@@ -13,12 +13,8 @@ import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
-# إضافة المسار | Ajouter le chemin
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-
-# ==================== اختبارات مراقب العمليات ====================
-# ==================== Tests Moniteur Processus ====================
 
 class TestProcessMonitor:
     """اختبارات مراقب العمليات | Tests du Moniteur Processus"""
@@ -41,7 +37,7 @@ class TestProcessMonitor:
         monitor = ProcessMonitor(interval=1.0)
         events = monitor.collect_once()
         assert isinstance(events, list)
-        assert len(events) >= 0  # قد يكون هناك 0 أو أكثر
+        assert len(events) >= 0
     
     def test_system_stats(self):
         """اختبار إحصائيات النظام | Test des stats système"""
@@ -52,9 +48,6 @@ class TestProcessMonitor:
         assert 'memory_percent' in stats
         assert 'process_count' in stats
 
-
-# ==================== اختبارات مراقب الشبكة ====================
-# ==================== Tests Moniteur Réseau ====================
 
 class TestNetworkMonitor:
     """اختبارات مراقب الشبكة | Tests du Moniteur Réseau"""
@@ -80,9 +73,6 @@ class TestNetworkMonitor:
         assert hasattr(event, 'total_connections')
 
 
-# ==================== اختبارات مراقب الملفات ====================
-# ==================== Tests Moniteur Fichiers ====================
-
 class TestFileMonitor:
     """اختبارات مراقب الملفات | Tests du Moniteur Fichiers"""
     
@@ -99,9 +89,6 @@ class TestFileMonitor:
             monitor = SimpleFileMonitor(watch_directories=[tmpdir])
             assert len(monitor.watch_directories) == 1
 
-
-# ==================== اختبارات السيناريوهات ====================
-# ==================== Tests Scénarios ====================
 
 class TestBenignScenarios:
     """اختبارات السيناريوهات الحميدة | Tests Scénarios Bénins"""
@@ -151,9 +138,6 @@ class TestMaliciousScenarios:
             assert events > 0
 
 
-# ==================== اختبارات هندسة الميزات ====================
-# ==================== Tests Feature Engineering ====================
-
 class TestFeatureExtractor:
     """اختبارات مستخرج الميزات | Tests Extracteur Features"""
     
@@ -182,7 +166,7 @@ class TestFeatureExtractor:
         extractor = FeatureExtractor()
         names = extractor.get_feature_names()
         assert isinstance(names, list)
-        assert len(names) >= 15  # على الأقل 15 ميزة
+        assert len(names) >= 15
     
     def test_extract_with_events(self):
         """اختبار الاستخراج مع أحداث | Test extraction avec événements"""
@@ -199,9 +183,6 @@ class TestFeatureExtractor:
         assert 'file_ops_per_sec' in features
         assert 'cpu_mean' in features
 
-
-# ==================== اختبارات النماذج ====================
-# ==================== Tests Modèles ====================
 
 class TestModelTrainer:
     """اختبارات مدرب النماذج | Tests Entraîneur Modèles"""
@@ -226,9 +207,6 @@ class TestModelTrainer:
         assert 'isolation_forest' in config
         assert 'random_forest' in config
 
-
-# ==================== اختبارات الكاشف الفوري ====================
-# ==================== Tests Détecteur Temps Réel ====================
 
 class TestRealtimeDetector:
     """اختبارات الكاشف الفوري | Tests Détecteur Temps Réel"""
@@ -268,9 +246,6 @@ class TestRealtimeDetector:
         assert 'total_detections' in status
 
 
-# ==================== اختبارات التكامل ====================
-# ==================== Tests d'Intégration ====================
-
 class TestIntegration:
     """اختبارات التكامل | Tests d'Intégration"""
     
@@ -279,25 +254,19 @@ class TestIntegration:
         from src.features.feature_engineering import FeatureExtractor
         from src.detector.realtime_detector import RealtimeDetector
         
-        # إنشاء أحداث | Créer des événements
         events = [
             {'timestamp': i * 100, 'source': 'file', 'data': {'operation': 'created', 'path': f'/test/{i}.txt', 'extension': '.txt'}}
             for i in range(10)
         ]
         
-        # استخراج الميزات | Extraire les features
         extractor = FeatureExtractor(window_size=10)
         features = extractor.extract_features_from_events(events)
         
-        # التنبؤ | Prédire
         detector = RealtimeDetector()
         result = detector.predict(features)
         
         assert result.prediction in ['benign', 'malicious', 'error']
 
-
-# ==================== اختبارات الأداء ====================
-# ==================== Tests de Performance ====================
 
 class TestPerformance:
     """اختبارات الأداء | Tests de Performance"""
@@ -316,8 +285,7 @@ class TestPerformance:
         features = extractor.extract_features_from_events(events)
         duration = time.time() - start
         
-        # يجب أن يكون أقل من ثانية | Doit être < 1 seconde
-        assert duration < 1.0, f"استخراج بطيء جداً | Extraction trop lente: {duration:.2f}s"
+        assert duration < 1.0, f"Astakhraj bat' jiddan | Extraction trop lente: {duration:.2f}s"
     
     def test_prediction_latency(self):
         """اختبار زمن التنبؤ | Test latence prédiction"""
@@ -331,15 +299,10 @@ class TestPerformance:
             result = detector.predict(features)
         duration = time.time() - start
         
-        avg_latency = duration / 100 * 1000  # ms
+        avg_latency = duration / 100 * 1000 
         
-        # يجب أن يكون أقل من 20ms | Doit être < 20ms
-        assert avg_latency < 20, f"تنبؤ بطيء جداً | Prédiction trop lente: {avg_latency:.2f}ms"
+        assert avg_latency < 20, f"Tanabbu' bat' jiddan | Prédiction trop lente: {avg_latency:.2f}ms"
 
-
-# ==================== تشغيل الاختبارات ====================
-# ==================== Exécution des tests ====================
 
 if __name__ == "__main__":
-    # تشغيل الاختبارات | Exécuter les tests
     pytest.main([__file__, "-v", "--tb=short"])

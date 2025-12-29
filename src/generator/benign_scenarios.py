@@ -1,8 +1,3 @@
-"""
-السيناريوهات الحميدة | Scénarios Bénins | Benign Scenarios
-محاكاة السلوك العادي للنظام
-Simulation du comportement normal du système
-"""
 
 import os
 import time
@@ -19,33 +14,20 @@ logger = logging.getLogger(__name__)
 
 
 class BenignScenarios:
-    """
-    مولد السيناريوهات الحميدة | Générateur de Scénarios Bénins
-    يحاكي السلوك العادي للنظام لتوليد بيانات التدريب
-    Simule le comportement normal du système pour générer des données d'entraînement
-    """
     
     def __init__(self, sandbox_dir: Optional[str] = None):
-        """
-        تهيئة المولد | Initialisation du générateur
-        
-        Args:
-            sandbox_dir: مجلد المحاكاة | Répertoire sandbox
-        """
         self.sandbox_dir = Path(sandbox_dir or tempfile.mkdtemp(prefix="benign_"))
         self.sandbox_dir.mkdir(parents=True, exist_ok=True)
         
         self._running = False
         self._threads: List[threading.Thread] = []
         
-        logger.info(f"تهيئة السيناريوهات الحميدة في | Scénarios bénins initialisés: {self.sandbox_dir}")
+        logger.info(f"Benign scenarios initialized in: {self.sandbox_dir}")
     
     def _random_string(self, length: int = 10) -> str:
-        """توليد سلسلة عشوائية | Générer une chaîne aléatoire"""
         return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
     
     def _random_content(self, size: int = 1000) -> str:
-        """توليد محتوى عشوائي | Générer un contenu aléatoire"""
         words = ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 
                  'adipiscing', 'elit', 'sed', 'do', 'eiusmod', 'tempor',
                  'incididunt', 'ut', 'labore', 'et', 'dolore', 'magna', 'aliqua']
@@ -54,23 +36,13 @@ class BenignScenarios:
             content.append(random.choice(words))
         return ' '.join(content)[:size]
     
-    # ==================== السيناريو 1: التصفح العادي ====================
-    # ==================== Scénario 1: Navigation Normale ====================
-    
     def simulate_web_browsing(
         self,
         duration: float = 30,
         intensity: str = "normal",
         callback: Optional[Callable] = None
     ):
-        """
-        محاكاة تصفح الويب العادي
-        Simuler la navigation web normale
-        
-        يحاكي: قراءة/كتابة cache، ملفات مؤقتة
-        Simule: lecture/écriture cache, fichiers temporaires
-        """
-        logger.info("🌐 بدء محاكاة التصفح | Démarrage simulation navigation")
+        logger.info("🌐 Starting web browsing simulation")
         
         cache_dir = self.sandbox_dir / "browser_cache"
         cache_dir.mkdir(exist_ok=True)
@@ -83,20 +55,17 @@ class BenignScenarios:
         
         while time.time() < end_time and self._running:
             try:
-                # إنشاء ملف cache | Créer un fichier cache
                 cache_file = cache_dir / f"cache_{self._random_string(8)}.tmp"
                 content = self._random_content(random.randint(100, 5000))
                 cache_file.write_text(content)
                 event_count += 1
                 
-                # قراءة بعض ملفات cache | Lire quelques fichiers cache
                 cache_files = list(cache_dir.glob("*.tmp"))
                 if cache_files:
                     selected = random.choice(cache_files)
                     _ = selected.read_text()
                     event_count += 1
                 
-                # حذف ملفات cache قديمة أحياناً | Supprimer parfois les vieux cache
                 if random.random() < 0.1 and len(cache_files) > 5:
                     oldest = random.choice(cache_files[:5])
                     if oldest.exists():
@@ -109,13 +78,10 @@ class BenignScenarios:
                 time.sleep(interval + random.uniform(0, interval))
                 
             except Exception as e:
-                logger.error(f"خطأ في محاكاة التصفح | Erreur simulation: {e}")
+                logger.error(f"Error in web browsing simulation: {e}")
         
-        logger.info(f"✅ انتهاء التصفح | Navigation terminée: {event_count} أحداث")
+        logger.info(f"✅ Web browsing finished: {event_count} events")
         return event_count
-    
-    # ==================== السيناريو 2: العمل المكتبي ====================
-    # ==================== Scénario 2: Travail Bureautique ====================
     
     def simulate_office_work(
         self,
@@ -123,14 +89,7 @@ class BenignScenarios:
         intensity: str = "normal",
         callback: Optional[Callable] = None
     ):
-        """
-        محاكاة العمل المكتبي
-        Simuler le travail bureautique
-        
-        يحاكي: فتح/حفظ مستندات، تعديل ملفات
-        Simule: ouvrir/sauvegarder documents, modifier fichiers
-        """
-        logger.info("📄 بدء محاكاة العمل المكتبي | Démarrage travail bureautique")
+        logger.info("📄 Starting office work simulation")
         
         docs_dir = self.sandbox_dir / "documents"
         docs_dir.mkdir(exist_ok=True)
@@ -147,7 +106,6 @@ class BenignScenarios:
                 action = random.choice(['create', 'read', 'modify', 'save'])
                 
                 if action == 'create':
-                    # إنشاء مستند جديد | Créer un nouveau document
                     ext = random.choice(extensions)
                     doc_file = docs_dir / f"document_{self._random_string(6)}{ext}"
                     content = self._random_content(random.randint(500, 3000))
@@ -155,7 +113,6 @@ class BenignScenarios:
                     event_count += 1
                 
                 elif action == 'read':
-                    # قراءة مستند | Lire un document
                     doc_files = list(docs_dir.glob("*.*"))
                     if doc_files:
                         selected = random.choice(doc_files)
@@ -163,7 +120,6 @@ class BenignScenarios:
                         event_count += 1
                 
                 elif action == 'modify':
-                    # تعديل مستند | Modifier un document
                     doc_files = list(docs_dir.glob("*.*"))
                     if doc_files:
                         selected = random.choice(doc_files)
@@ -173,7 +129,6 @@ class BenignScenarios:
                         event_count += 2
                 
                 elif action == 'save':
-                    # حفظ نسخة | Sauvegarder une copie
                     doc_files = list(docs_dir.glob("*.*"))
                     if doc_files:
                         selected = random.choice(doc_files)
@@ -187,13 +142,10 @@ class BenignScenarios:
                 time.sleep(interval + random.uniform(0, interval * 0.5))
                 
             except Exception as e:
-                logger.error(f"خطأ في العمل المكتبي | Erreur bureautique: {e}")
+                logger.error(f"Error in office work simulation: {e}")
         
-        logger.info(f"✅ انتهاء العمل المكتبي | Bureautique terminé: {event_count} أحداث")
+        logger.info(f"✅ Office work finished: {event_count} events")
         return event_count
-    
-    # ==================== السيناريو 3: الترجمة البرمجية ====================
-    # ==================== Scénario 3: Compilation ====================
     
     def simulate_compilation(
         self,
@@ -201,14 +153,7 @@ class BenignScenarios:
         intensity: str = "normal",
         callback: Optional[Callable] = None
     ):
-        """
-        محاكاة الترجمة البرمجية
-        Simuler la compilation
-        
-        يحاكي: إنشاء ملفات مؤقتة، عمليات I/O مكثفة
-        Simule: création fichiers temporaires, I/O intensives
-        """
-        logger.info("🔨 بدء محاكاة الترجمة | Démarrage compilation")
+        logger.info("🔨 Starting compilation simulation")
         
         build_dir = self.sandbox_dir / "build"
         build_dir.mkdir(exist_ok=True)
@@ -221,7 +166,6 @@ class BenignScenarios:
         end_time = time.time() + duration
         event_count = 0
         
-        # إنشاء ملفات مصدرية | Créer des fichiers sources
         for i in range(10):
             src_file = src_dir / f"module_{i}.py"
             code = f'''"""Module {i}"""
@@ -236,24 +180,20 @@ class Class{i}:
         
         while time.time() < end_time and self._running:
             try:
-                # قراءة ملف مصدري | Lire un fichier source
                 src_files = list(src_dir.glob("*.py"))
                 if src_files:
                     selected = random.choice(src_files)
                     _ = selected.read_text()
                     event_count += 1
                 
-                # إنشاء ملف object | Créer un fichier object
                 obj_file = build_dir / f"obj_{self._random_string(6)}.o"
                 obj_file.write_bytes(os.urandom(random.randint(1000, 10000)))
                 event_count += 1
                 
-                # إنشاء ملفات مؤقتة | Créer des fichiers temporaires
                 tmp_file = build_dir / f"tmp_{self._random_string(4)}.tmp"
                 tmp_file.write_text(self._random_content(500))
                 event_count += 1
                 
-                # حذف ملفات مؤقتة | Supprimer des fichiers temporaires
                 tmp_files = list(build_dir.glob("*.tmp"))
                 if len(tmp_files) > 10:
                     for f in tmp_files[:5]:
@@ -267,13 +207,10 @@ class Class{i}:
                 time.sleep(interval)
                 
             except Exception as e:
-                logger.error(f"خطأ في الترجمة | Erreur compilation: {e}")
+                logger.error(f"Error in compilation simulation: {e}")
         
-        logger.info(f"✅ انتهاء الترجمة | Compilation terminée: {event_count} أحداث")
+        logger.info(f"✅ Compilation finished: {event_count} events")
         return event_count
-    
-    # ==================== السيناريو 4: نسخ الملفات ====================
-    # ==================== Scénario 4: Copie de Fichiers ====================
     
     def simulate_file_copy(
         self,
@@ -281,14 +218,7 @@ class Class{i}:
         intensity: str = "normal",
         callback: Optional[Callable] = None
     ):
-        """
-        محاكاة نسخ الملفات
-        Simuler la copie de fichiers
-        
-        يحاكي: عمليات I/O عادية، نسخ/نقل ملفات
-        Simule: opérations I/O normales, copie/déplacement fichiers
-        """
-        logger.info("📁 بدء محاكاة نسخ الملفات | Démarrage copie fichiers")
+        logger.info("📁 Starting file copy simulation")
         
         source_dir = self.sandbox_dir / "source"
         dest_dir = self.sandbox_dir / "destination"
@@ -298,7 +228,6 @@ class Class{i}:
         intervals = {"low": 2.0, "normal": 0.5, "high": 0.1}
         interval = intervals.get(intensity, 0.5)
         
-        # إنشاء ملفات مصدرية | Créer des fichiers sources
         for i in range(20):
             f = source_dir / f"file_{i}.dat"
             f.write_bytes(os.urandom(random.randint(100, 5000)))
@@ -311,7 +240,6 @@ class Class{i}:
                 action = random.choice(['copy', 'read', 'move_back'])
                 
                 if action == 'copy':
-                    # نسخ ملف | Copier un fichier
                     src_files = list(source_dir.glob("*.*"))
                     if src_files:
                         selected = random.choice(src_files)
@@ -321,7 +249,6 @@ class Class{i}:
                         event_count += 2
                 
                 elif action == 'read':
-                    # قراءة ملفات | Lire des fichiers
                     all_files = list(source_dir.glob("*.*")) + list(dest_dir.glob("*.*"))
                     if all_files:
                         selected = random.choice(all_files)
@@ -329,7 +256,6 @@ class Class{i}:
                         event_count += 1
                 
                 elif action == 'move_back':
-                    # إعادة ملف إلى المصدر | Remettre un fichier à la source
                     dest_files = list(dest_dir.glob("*.*"))
                     if dest_files and len(dest_files) > 5:
                         selected = random.choice(dest_files)
@@ -343,13 +269,10 @@ class Class{i}:
                 time.sleep(interval)
                 
             except Exception as e:
-                logger.error(f"خطأ في نسخ الملفات | Erreur copie: {e}")
+                logger.error(f"Error in file copy simulation: {e}")
         
-        logger.info(f"✅ انتهاء نسخ الملفات | Copie terminée: {event_count} أحداث")
+        logger.info(f"✅ File copy finished: {event_count} events")
         return event_count
-    
-    # ==================== السيناريو 5: تحديث النظام ====================
-    # ==================== Scénario 5: Mise à Jour Système ====================
     
     def simulate_system_update(
         self,
@@ -357,14 +280,7 @@ class Class{i}:
         intensity: str = "normal",
         callback: Optional[Callable] = None
     ):
-        """
-        محاكاة تحديث النظام
-        Simuler la mise à jour système
-        
-        يحاكي: تحميل/تثبيت حزم، تحديث ملفات
-        Simule: téléchargement/installation paquets, mise à jour fichiers
-        """
-        logger.info("🔄 بدء محاكاة تحديث النظام | Démarrage mise à jour")
+        logger.info("🔄 Starting system update simulation")
         
         update_dir = self.sandbox_dir / "updates"
         update_dir.mkdir(exist_ok=True)
@@ -382,13 +298,11 @@ class Class{i}:
                 phase = random.choice(['download', 'extract', 'install', 'cleanup'])
                 
                 if phase == 'download':
-                    # تحميل حزمة | Télécharger un paquet
                     pkg_file = update_dir / f"package_{self._random_string(6)}.pkg"
                     pkg_file.write_bytes(os.urandom(random.randint(1000, 10000)))
                     event_count += 1
                 
                 elif phase == 'extract':
-                    # استخراج حزمة | Extraire un paquet
                     pkg_files = list(update_dir.glob("*.pkg"))
                     if pkg_files:
                         selected = random.choice(pkg_files)
@@ -400,7 +314,6 @@ class Class{i}:
                             event_count += 1
                 
                 elif phase == 'install':
-                    # تثبيت | Installer
                     extract_dirs = [d for d in update_dir.iterdir() if d.is_dir()]
                     if extract_dirs:
                         src = random.choice(extract_dirs)
@@ -410,7 +323,6 @@ class Class{i}:
                             event_count += 2
                 
                 elif phase == 'cleanup':
-                    # تنظيف | Nettoyage
                     old_pkgs = list(update_dir.glob("*.pkg"))
                     if len(old_pkgs) > 5:
                         for p in old_pkgs[:3]:
@@ -424,13 +336,10 @@ class Class{i}:
                 time.sleep(interval)
                 
             except Exception as e:
-                logger.error(f"خطأ في التحديث | Erreur mise à jour: {e}")
+                logger.error(f"Error in system update simulation: {e}")
         
-        logger.info(f"✅ انتهاء التحديث | Mise à jour terminée: {event_count} أحداث")
+        logger.info(f"✅ System update finished: {event_count} events")
         return event_count
-    
-    # ==================== تشغيل جميع السيناريوهات ====================
-    # ==================== Exécuter Tous les Scénarios ====================
     
     def run_all_scenarios(
         self,
@@ -439,19 +348,6 @@ class Class{i}:
         parallel: bool = True,
         callback: Optional[Callable] = None
     ) -> int:
-        """
-        تشغيل جميع السيناريوهات الحميدة
-        Exécuter tous les scénarios bénins
-        
-        Args:
-            duration_per_scenario: مدة كل سيناريو | Durée par scénario
-            intensity: شدة النشاط | Intensité de l'activité
-            parallel: تشغيل متوازي | Exécution parallèle
-            callback: دالة الاستدعاء | Callback
-            
-        Returns:
-            إجمالي الأحداث | Total événements
-        """
         self._running = True
         total_events = 0
         
@@ -463,10 +359,9 @@ class Class{i}:
             ("system_update", self.simulate_system_update)
         ]
         
-        logger.info(f"🚀 تشغيل {len(scenarios)} سيناريوهات | Exécution de {len(scenarios)} scénarios")
+        logger.info(f"🚀 Running {len(scenarios)} scenarios")
         
         if parallel:
-            # تشغيل متوازي | Exécution parallèle
             results = {}
             threads = []
             
@@ -483,49 +378,44 @@ class Class{i}:
             
             total_events = sum(results.values())
         else:
-            # تشغيل تسلسلي | Exécution séquentielle
             for name, func in scenarios:
                 events = func(duration=duration_per_scenario, intensity=intensity, callback=callback)
                 total_events += events
         
         self._running = False
-        logger.info(f"✅ انتهت جميع السيناريوهات | Tous les scénarios terminés: {total_events} أحداث")
+        logger.info(f"✅ All scenarios finished: {total_events} events")
         return total_events
     
     def stop(self):
-        """إيقاف جميع السيناريوهات | Arrêter tous les scénarios"""
         self._running = False
     
     def cleanup(self):
-        """تنظيف المجلدات | Nettoyer les répertoires"""
         import shutil
         if self.sandbox_dir.exists():
             shutil.rmtree(self.sandbox_dir)
-            logger.info(f"تم تنظيف | Nettoyé: {self.sandbox_dir}")
+            logger.info(f"Cleaned up: {self.sandbox_dir}")
 
 
-# اختبار الوحدة | Test du module
 if __name__ == "__main__":
     print("=" * 60)
-    print("اختبار السيناريوهات الحميدة | Test des Scénarios Bénins")
+    print("Test Benign Scenarios")
     print("=" * 60)
     
     scenarios = BenignScenarios()
     
     def on_event(scenario_name, count):
-        print(f"  [{scenario_name}] الأحداث | Événements: {count}")
+        print(f"  [{scenario_name}] Events: {count}")
     
     try:
-        # اختبار كل سيناريو | Tester chaque scénario
-        print("\n🌐 التصفح | Navigation...")
+        print("\n🌐 Browsing...")
         scenarios.simulate_web_browsing(duration=5, intensity="high", callback=on_event)
         
-        print("\n📄 المكتبي | Bureautique...")
+        print("\n📄 Office...")
         scenarios.simulate_office_work(duration=5, intensity="high", callback=on_event)
         
-        print("\n🔨 الترجمة | Compilation...")
+        print("\n🔨 Compilation...")
         scenarios.simulate_compilation(duration=5, intensity="high", callback=on_event)
         
     finally:
         scenarios.cleanup()
-        print("\n✅ تم الانتهاء | Terminé")
+        print("\n✅ Finished")

@@ -18,12 +18,10 @@ from pathlib import Path
 import logging
 from collections import deque
 
-# استيراد المراقبين | Importer les moniteurs
 from .process_monitor import ProcessMonitor, ProcessEvent
 from .network_monitor import NetworkMonitor, NetworkEvent
 from .file_monitor import FileMonitor, SimpleFileMonitor, FileEvent
 
-# إعداد التسجيل | Configuration du logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -39,10 +37,10 @@ class UnifiedEvent:
     """
     timestamp: float
     timestamp_iso: str
-    source: str  # process, network, file
+    source: str
     event_type: str
     data: Dict[str, Any]
-    label: str = "benign"  # benign, malicious
+    label: str = "benign"
     
     def to_dict(self) -> Dict:
         return asdict(self)
@@ -65,33 +63,25 @@ class BehaviorCollector:
         Args:
             config_path: مسار ملف التكوين | Chemin du fichier de configuration
         """
-        # تحميل التكوين | Charger la configuration
         self.config = self._load_config(config_path)
         
-        # قائمة الأحداث الموحدة | Liste des événements unifiés
         self._events: deque = deque(maxlen=self.config.get('max_events_buffer', 100000))
         self._lock = threading.Lock()
         
-        # إعداد مسارات البيانات | Configurer les chemins de données
         self.data_dir = Path(self.config.get('data_dir', './data'))
         self.raw_dir = self.data_dir / 'raw'
         self.raw_dir.mkdir(parents=True, exist_ok=True)
         
-        # مجلد المراقبة | Répertoire de surveillance
         self.watch_dir = self.data_dir / 'test_sandbox'
         self.watch_dir.mkdir(parents=True, exist_ok=True)
         
-        # إنشاء المراقبين | Créer les moniteurs
         self._init_monitors()
         
-        # ملف الإخراج | Fichier de sortie
         self._output_file = None
         self._output_format = self.config.get('output_format', 'jsonl')
         
-        # التسمية الحالية | Label actuel
         self._current_label = "benign"
         
-        # الإحصائيات | Statistiques
         self._stats = {
             'process_events': 0,
             'network_events': 0,
@@ -132,7 +122,6 @@ class BehaviorCollector:
                 with open(config_path, 'r', encoding='utf-8') as f:
                     loaded_config = yaml.safe_load(f)
                     if loaded_config:
-                        # دمج التكوينات | Fusionner les configurations
                         self._deep_merge(default_config, loaded_config)
                 logger.info(f"تم تحميل التكوين من | Configuration chargée de: {config_path}")
             except Exception as e:
@@ -156,7 +145,6 @@ class BehaviorCollector:
         """
         interval = self.config.get('collection_interval', 0.5)
         
-        # مراقب العمليات | Moniteur de processus
         proc_config = self.config.get('process_monitor', {})
         if proc_config.get('enabled', True):
             self.process_monitor = ProcessMonitor(
@@ -167,7 +155,6 @@ class BehaviorCollector:
         else:
             self.process_monitor = None
         
-        # مراقب الشبكة | Moniteur réseau
         net_config = self.config.get('network_monitor', {})
         if net_config.get('enabled', True):
             self.network_monitor = NetworkMonitor(
@@ -178,11 +165,9 @@ class BehaviorCollector:
         else:
             self.network_monitor = None
         
-        # مراقب الملفات | Moniteur de fichiers
         file_config = self.config.get('file_monitor', {})
         if file_config.get('enabled', True):
             watch_dirs = file_config.get('watch_directories', [str(self.watch_dir)])
-            # تأكد من وجود المجلدات | S'assurer que les répertoires existent
             for d in watch_dirs:
                 Path(d).mkdir(parents=True, exist_ok=True)
             
@@ -194,7 +179,6 @@ class BehaviorCollector:
                     recursive=True
                 )
             except ImportError:
-                # استخدام المراقب البسيط كبديل
                 logger.warning("استخدام مراقب الملفات البسيط | Utilisation du moniteur simple")
                 self.file_monitor = SimpleFileMonitor(
                     watch_directories=watch_dirs,
@@ -226,7 +210,6 @@ class BehaviorCollector:
             self._events.append(event)
             self._stats['total_events'] += 1
         
-        # كتابة إلى الملف إذا كان مفتوحاً | Écrire dans le fichier si ouvert
         if self._output_file:
             try:
                 self._output_file.write(event.to_json() + '\n')
@@ -293,14 +276,12 @@ class BehaviorCollector:
         
         self._stats['start_time'] = time.time()
         
-        # فتح ملف الإخراج | Ouvrir le fichier de sortie
         if output_file:
             output_path = Path(output_file)
             output_path.parent.mkdir(parents=True, exist_ok=True)
             self._output_file = open(output_path, 'a', encoding='utf-8')
             logger.info(f"الكتابة إلى | Écriture vers: {output_file}")
         
-        # بدء المراقبين | Démarrer les moniteurs
         if self.process_monitor:
             self.process_monitor.start()
             logger.info("✅ مراقب العمليات | Moniteur processus")
@@ -321,7 +302,6 @@ class BehaviorCollector:
         """
         logger.info("إيقاف وكيل جمع السلوك | Arrêt de l'agent de collecte")
         
-        # إيقاف المراقبين | Arrêter les moniteurs
         if self.process_monitor:
             self.process_monitor.stop()
         
@@ -331,12 +311,10 @@ class BehaviorCollector:
         if self.file_monitor:
             self.file_monitor.stop()
         
-        # إغلاق ملف الإخراج | Fermer le fichier de sortie
         if self._output_file:
             self._output_file.close()
             self._output_file = None
         
-        # طباعة الإحصائيات | Afficher les statistiques
         self._print_stats()
     
     def _print_stats(self):
@@ -400,7 +378,6 @@ class BehaviorCollector:
         elif format == 'csv':
             import csv
             if events:
-                # استخراج جميع المفاتيح | Extraire toutes les clés
                 all_keys = set()
                 for event in events:
                     all_keys.update(event.to_dict().keys())
@@ -457,11 +434,9 @@ def main():
     
     args = parser.parse_args()
     
-    # إنشاء الوكيل | Créer l'agent
     collector = BehaviorCollector(config_path=args.config)
     collector.set_label(args.label)
     
-    # تحديد ملف الإخراج | Définir le fichier de sortie
     if args.output:
         output_file = args.output
     else:
@@ -469,7 +444,6 @@ def main():
         output_file = f"data/raw/events_{args.label}_{timestamp}.jsonl"
     
     try:
-        # بدء الجمع | Démarrer la collecte
         collector.start(output_file=output_file)
         
         if args.test:

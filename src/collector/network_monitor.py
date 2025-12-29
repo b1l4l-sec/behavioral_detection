@@ -13,7 +13,6 @@ from datetime import datetime
 from collections import defaultdict
 import logging
 
-# إعداد التسجيل | Configuration du logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -24,34 +23,29 @@ class NetworkEvent:
     حدث الشبكة | Événement réseau
     يمثل لقطة من حالة الشبكة
     """
-    timestamp: float              # الطابع الزمني بالميلي ثانية | Timestamp en ms
-    timestamp_iso: str            # الوقت بتنسيق ISO | Temps format ISO
-    event_type: str               # نوع الحدث | Type d'événement
+    timestamp: float
+    timestamp_iso: str
+    event_type: str
     
-    # إحصائيات عامة | Statistiques générales
-    total_connections: int        # إجمالي الاتصالات | Total connexions
-    established_connections: int  # الاتصالات المنشأة | Connexions établies
-    listening_ports: int          # المنافذ المستمعة | Ports en écoute
+    total_connections: int
+    established_connections: int
+    listening_ports: int
     
-    # العناوين والمنافذ | Adresses et ports
-    unique_remote_ips: int        # العناوين البعيدة الفريدة | IPs distantes uniques
-    unique_remote_ports: int      # المنافذ البعيدة الفريدة | Ports distants uniques
-    unique_local_ports: int       # المنافذ المحلية الفريدة | Ports locaux uniques
+    unique_remote_ips: int
+    unique_remote_ports: int
+    unique_local_ports: int
     
-    # حركة البيانات | Trafic de données
-    bytes_sent: int               # البايتات المرسلة | Bytes envoyés
-    bytes_recv: int               # البايتات المستقبلة | Bytes reçus
-    packets_sent: int             # الحزم المرسلة | Paquets envoyés
-    packets_recv: int             # الحزم المستقبلة | Paquets reçus
+    bytes_sent: int
+    bytes_recv: int
+    packets_sent: int
+    packets_recv: int
     
-    # معدلات (منذ آخر قراءة) | Taux (depuis dernière lecture)
-    bytes_sent_rate: float        # معدل الإرسال | Taux d'envoi
-    bytes_recv_rate: float        # معدل الاستقبال | Taux de réception
-    new_connections: int          # اتصالات جديدة | Nouvelles connexions
+    bytes_sent_rate: float
+    bytes_recv_rate: float
+    new_connections: int
     
-    # تفاصيل إضافية | Détails supplémentaires
-    connection_types: Dict        # أنواع الاتصالات | Types de connexions
-    top_remote_ips: List[str]     # أكثر العناوين نشاطاً | IPs les plus actives
+    connection_types: Dict
+    top_remote_ips: List[str]
     
     def to_dict(self) -> Dict:
         """تحويل إلى قاموس | Convertir en dictionnaire"""
@@ -110,7 +104,6 @@ class NetworkMonitor:
         self._connection_details: List[ConnectionDetail] = []
         self._lock = threading.Lock()
         
-        # القراءات السابقة لحساب المعدلات | Lectures précédentes pour les taux
         self._prev_bytes_sent = 0
         self._prev_bytes_recv = 0
         self._prev_connections: Set[tuple] = set()
@@ -139,10 +132,8 @@ class NetworkMonitor:
         current_time = time.time()
         now = datetime.now()
         
-        # جمع الاتصالات | Collecter les connexions
         connections = psutil.net_connections(kind='inet')
         
-        # إحصائيات | Statistiques
         total = 0
         established = 0
         listening = 0
@@ -153,7 +144,6 @@ class NetworkMonitor:
         current_connections: Set[tuple] = set()
         
         for conn in connections:
-            # تخطي المنافذ المستثناة | Ignorer les ports exclus
             if conn.laddr and conn.laddr.port in self.excluded_ports:
                 continue
             
@@ -165,7 +155,6 @@ class NetworkMonitor:
             elif conn.status == 'LISTEN':
                 listening += 1
             
-            # جمع العناوين والمنافذ | Collecter adresses et ports
             if conn.laddr:
                 local_ports.add(conn.laddr.port)
             
@@ -174,7 +163,6 @@ class NetworkMonitor:
                 remote_ports.add(conn.raddr.port)
                 current_connections.add((conn.raddr.ip, conn.raddr.port))
                 
-                # تفاصيل الاتصال | Détails de connexion
                 if self.detailed_callback:
                     detail = ConnectionDetail(
                         timestamp=current_time * 1000,
@@ -190,14 +178,12 @@ class NetworkMonitor:
                     with self._lock:
                         self._connection_details.append(detail)
         
-        # إحصائيات حركة البيانات | Statistiques du trafic
         net_io = psutil.net_io_counters()
         bytes_sent = net_io.bytes_sent
         bytes_recv = net_io.bytes_recv
         packets_sent = net_io.packets_sent
         packets_recv = net_io.packets_recv
         
-        # حساب المعدلات | Calculer les taux
         time_diff = current_time - self._prev_time
         if time_diff > 0:
             bytes_sent_rate = (bytes_sent - self._prev_bytes_sent) / time_diff
@@ -205,10 +191,8 @@ class NetworkMonitor:
         else:
             bytes_sent_rate = bytes_recv_rate = 0
         
-        # الاتصالات الجديدة | Nouvelles connexions
         new_connections = len(current_connections - self._prev_connections)
         
-        # أكثر العناوين نشاطاً | IPs les plus actives
         ip_counts = defaultdict(int)
         for conn in connections:
             if conn.raddr:
@@ -216,13 +200,11 @@ class NetworkMonitor:
         top_ips = sorted(ip_counts.items(), key=lambda x: x[1], reverse=True)[:5]
         top_remote_ips = [ip for ip, _ in top_ips]
         
-        # تحديث القراءات السابقة | Mettre à jour les lectures précédentes
         self._prev_bytes_sent = bytes_sent
         self._prev_bytes_recv = bytes_recv
         self._prev_connections = current_connections
         self._prev_time = current_time
         
-        # إنشاء الحدث | Créer l'événement
         event = NetworkEvent(
             timestamp=current_time * 1000,
             timestamp_iso=now.isoformat(),
@@ -261,7 +243,6 @@ class NetworkMonitor:
                 
                 with self._lock:
                     self._events.append(event)
-                    # الحفاظ على آخر 10000 حدث | Garder les derniers 10000
                     if len(self._events) > 10000:
                         self._events = self._events[-10000:]
                     if len(self._connection_details) > 50000:
@@ -335,7 +316,6 @@ class NetworkMonitor:
         return connections
 
 
-# اختبار الوحدة | Test du module
 if __name__ == "__main__":
     print("=" * 60)
     print("اختبار مراقب الشبكة | Test du Moniteur Réseau")
@@ -351,11 +331,9 @@ if __name__ == "__main__":
     
     monitor = NetworkMonitor(interval=1.0, callback=on_event)
     
-    # جمع لقطة واحدة | Collecter un snapshot
     print("\nجمع لقطة واحدة | Collecte d'un snapshot...")
     event = monitor.collect_once()
     
-    # عرض الاتصالات الحالية | Afficher les connexions actuelles
     print("\nالاتصالات النشطة | Connexions actives:")
     connections = monitor.get_current_connections()
     for i, conn in enumerate(connections[:10]):
@@ -363,7 +341,6 @@ if __name__ == "__main__":
     if len(connections) > 10:
         print(f"  ... و {len(connections) - 10} اتصالات أخرى")
     
-    # المراقبة المستمرة | Surveillance continue
     print("\nبدء المراقبة المستمرة (5 ثوان)...")
     monitor.start()
     time.sleep(5)

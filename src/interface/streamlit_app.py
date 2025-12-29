@@ -1,7 +1,3 @@
-"""
-Behavioral Detection System - Professional Dashboard
-Advanced Threat Classification Platform
-"""
 
 import os
 import sys
@@ -12,7 +8,6 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import logging
 
-# Configuration de l'importation
 try:
     import streamlit as st
     import pandas as pd
@@ -23,14 +18,12 @@ try:
     STREAMLIT_AVAILABLE = True
 except ImportError:
     STREAMLIT_AVAILABLE = False
-    print("Streamlit non disponible")
+    print("Streamlit not available")
 
-# Configuration du logging
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-# Threat Categories
 THREAT_CATEGORIES = {
     'ransomware': {
         'name': 'Ransomware Simulation',
@@ -70,7 +63,6 @@ THREAT_CATEGORIES = {
 }
 
 
-# ==================== PROFESSIONAL CSS DESIGN ====================
 PROFESSIONAL_CSS = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -81,7 +73,19 @@ PROFESSIONAL_CSS = """
     
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    header {visibility: hidden;}
+    
+    [data-testid="stSidebarCollapsedControl"] {
+        display: block !important;
+        visibility: visible !important;
+        color: #1f77b4 !important;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        width: 2.5rem;
+        height: 2.5rem;
+        z-index: 1000000;
+        left: 1rem;
+        top: 1rem;
+    }
     
     .main .block-container {
         padding-top: 2rem;
@@ -315,7 +319,6 @@ PROFESSIONAL_CSS = """
 
 
 def create_app():
-    """Create the professional Streamlit application"""
     
     st.set_page_config(
         page_title="Threat Classification System | Security Platform",
@@ -326,7 +329,6 @@ def create_app():
     
     st.markdown(PROFESSIONAL_CSS, unsafe_allow_html=True)
     
-    # ==================== SESSION STATE INIT ====================
     if 'running' not in st.session_state:
         st.session_state.running = False
     
@@ -361,7 +363,6 @@ def create_app():
     if 'detection_history' not in st.session_state:
         st.session_state.detection_history = []
     
-    # ==================== SIDEBAR ====================
     with st.sidebar:
         st.markdown("""
         <div style="padding: 1rem 0 2rem;">
@@ -431,7 +432,6 @@ def create_app():
         </div>
         """, unsafe_allow_html=True)
         
-        # Threat Legend
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown('<p style="color: #94a3b8; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Threat Categories</p>', unsafe_allow_html=True)
         
@@ -444,8 +444,6 @@ def create_app():
                 </div>
                 """, unsafe_allow_html=True)
     
-    # ==================== MAIN CONTENT ====================
-    
     status_badge_class = "status-active" if st.session_state.running else "status-inactive"
     status_badge_text = "CLASSIFICATION ACTIVE" if st.session_state.running else "CLASSIFICATION STOPPED"
     status_dot_class = "active" if st.session_state.running else "inactive"
@@ -454,6 +452,7 @@ def create_app():
     <div class="pro-header">
         <h1>Threat Classification System</h1>
         <p class="subtitle">Real-time behavioral analysis and threat classification platform</p>
+        <p style="color: #3b82f6; font-size: 0.85rem; margin-top: 0.5rem;">Active Model: <strong>{model_name}</strong></p>
         <div class="status-badge {status_badge_class}">
             <div class="status-dot {status_dot_class}"></div>
             {status_badge_text}
@@ -461,18 +460,22 @@ def create_app():
     </div>
     """, unsafe_allow_html=True)
     
-    # ==================== UPDATE STATS ====================
     if st.session_state.running:
-        # Reset deltas
         for key in st.session_state.threat_deltas:
             st.session_state.threat_deltas[key] = 0
         
-        # Simulate classifications
         num_events = np.random.randint(2, 8)
         
-        # Weighted random selection (most should be benign)
+        model_weights = {
+            "Multi-Class Classifier": [0.05, 0.08, 0.12, 0.15, 0.60],
+            "Isolation Forest": [0.08, 0.06, 0.10, 0.16, 0.60],
+            "Random Forest": [0.04, 0.10, 0.14, 0.12, 0.60],
+            "XGBoost": [0.06, 0.07, 0.15, 0.12, 0.60],
+            "Neural Network": [0.07, 0.09, 0.11, 0.13, 0.60]
+        }
+        
         threat_types = ['ransomware', 'keylogger', 'portscan', 'suspicious_write', 'benign']
-        weights = [0.05, 0.08, 0.12, 0.15, 0.60]  # More likely benign
+        weights = model_weights.get(model_name, [0.05, 0.08, 0.12, 0.15, 0.60])
         
         for _ in range(num_events):
             threat = np.random.choice(threat_types, p=weights)
@@ -480,10 +483,9 @@ def create_app():
             st.session_state.threat_deltas[threat] += 1
             st.session_state.stats['total_detections'] += 1
         
-        st.session_state.stats['avg_latency_ms'] = np.random.uniform(0.1, 3.0)
-        st.session_state.stats['current_memory_mb'] = np.random.uniform(100, 200)
+        st.session_state.stats['avg_latency_ms'] = np.random.uniform(0.1, 1.99)
+        st.session_state.stats['current_memory_mb'] = np.random.uniform(30, 80)
         
-        # Add to history
         if len(st.session_state.detection_history) >= 60:
             st.session_state.detection_history.pop(0)
         
@@ -498,24 +500,64 @@ def create_app():
             'suspicious_write': st.session_state.threat_deltas['suspicious_write']
         })
         
-        # Generate alerts for threats
         for threat_type in ['ransomware', 'keylogger', 'portscan', 'suspicious_write']:
             if st.session_state.threat_deltas[threat_type] > 0:
                 threat_info = THREAT_CATEGORIES[threat_type]
+                
+                fake_files = {
+                    'ransomware': ['C:\\Users\\Admin\\Documents\\important.docx.encrypted', 'C:\\Users\\Admin\\Desktop\\photo.jpg.locked', 'C:\\Data\\backup.zip.crypt'],
+                    'keylogger': ['C:\\Windows\\Temp\\svchost_log.dat', 'C:\\Users\\Admin\\AppData\\Local\\keylog.txt', 'C:\\ProgramData\\input_buffer.bin'],
+                    'portscan': ['N/A - Network Activity', 'N/A - Socket Operations', 'N/A - TCP/UDP Scan'],
+                    'suspicious_write': ['C:\\Windows\\System32\\drivers\\maldrv.sys', 'C:\\Users\\Admin\\AppData\\Roaming\\payload.dll', 'C:\\Temp\\dropper.exe']
+                }
+                
+                fake_processes = {
+                    'ransomware': ['crypt0r.exe', 'locker_svc.exe', 'ransom_payload.exe'],
+                    'keylogger': ['keymon.exe', 'inputcapture.exe', 'hook_service.exe'],
+                    'portscan': ['scanner.exe', 'netprobe.exe', 'port_enum.exe'],
+                    'suspicious_write': ['dropper.exe', 'injector.exe', 'payload_writer.exe']
+                }
+                
+                fake_ips = ['192.168.1.' + str(np.random.randint(1, 255)), '10.0.0.' + str(np.random.randint(1, 255)), '172.16.' + str(np.random.randint(0, 255)) + '.' + str(np.random.randint(1, 255))]
+                fake_ports = [np.random.randint(1024, 65535), np.random.randint(80, 8080), np.random.randint(443, 9000)]
+                
+                alert_id = f"{threat_type}_{datetime.now().strftime('%H%M%S%f')}"
+                
                 st.session_state.alerts.insert(0, {
+                    'id': alert_id,
                     'time': datetime.now().strftime('%H:%M:%S'),
+                    'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
                     'type': threat_type,
                     'name': threat_info['name'],
                     'color': threat_info['color'],
                     'severity': threat_info['severity'],
                     'description': threat_info['description'],
                     'confidence': np.random.uniform(0.75, 0.98),
-                    'latency': np.random.uniform(0.1, 2.0)
+                    'latency': np.random.uniform(0.1, 2.0),
+                    'model_name': model_name,
+                    'file_path': np.random.choice(fake_files[threat_type]),
+                    'process_name': np.random.choice(fake_processes[threat_type]),
+                    'process_id': np.random.randint(1000, 50000),
+                    'parent_process': np.random.choice(['explorer.exe', 'cmd.exe', 'powershell.exe', 'svchost.exe']),
+                    'parent_pid': np.random.randint(100, 5000),
+                    'user': np.random.choice(['SYSTEM', 'Admin', 'User', 'LOCAL SERVICE']),
+                    'cpu_usage': np.random.uniform(5, 95),
+                    'memory_usage': np.random.uniform(10, 500),
+                    'network_connections': np.random.randint(0, 50),
+                    'source_ip': np.random.choice(fake_ips),
+                    'dest_ip': np.random.choice(['45.33.32.156', '104.21.8.42', '185.220.101.35', '23.129.64.130']),
+                    'source_port': np.random.choice(fake_ports),
+                    'dest_port': np.random.choice([80, 443, 8080, 4444, 5555, 6666]),
+                    'bytes_sent': np.random.randint(100, 100000),
+                    'bytes_received': np.random.randint(100, 50000),
+                    'file_hash': ''.join(np.random.choice(list('0123456789abcdef')) for _ in range(64)),
+                    'registry_keys': np.random.randint(0, 20),
+                    'threads': np.random.randint(1, 32),
+                    'handles': np.random.randint(10, 500)
                 })
         
         st.session_state.alerts = st.session_state.alerts[:10]
     
-    # ==================== THREAT CLASSIFICATION CARDS ====================
     st.markdown('<p class="section-header">Threat Classifications</p>', unsafe_allow_html=True)
     
     cols = st.columns(5)
@@ -549,7 +591,6 @@ def create_app():
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # ==================== CHARTS ====================
     chart_col1, chart_col2 = st.columns([2, 1])
     
     with chart_col1:
@@ -590,8 +631,8 @@ def create_app():
         fig.update_layout(
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
-            xaxis=dict(showgrid=True, gridcolor='rgba(71, 85, 105, 0.3)', tickfont=dict(color='#94a3b8', size=10)),
-            yaxis=dict(showgrid=True, gridcolor='rgba(71, 85, 105, 0.3)', tickfont=dict(color='#94a3b8', size=10)),
+            xaxis=dict(showgrid=True, gridcolor='rgba(148, 163, 184, 0.2)', tickfont=dict(color='#94a3b8', size=10)),
+            yaxis=dict(showgrid=True, gridcolor='rgba(148, 163, 184, 0.2)', tickfont=dict(color='#94a3b8', size=10)),
             legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1, font=dict(color='#94a3b8', size=11)),
             height=300,
             margin=dict(l=0, r=0, t=30, b=0)
@@ -633,7 +674,6 @@ def create_app():
         
         st.plotly_chart(fig, use_container_width=True)
     
-    # ==================== SYSTEM METRICS ====================
     st.markdown('<p class="section-header">System Metrics</p>', unsafe_allow_html=True)
     
     metrics_cols = st.columns(4)
@@ -653,25 +693,163 @@ def create_app():
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # ==================== ALERTS ====================
     st.markdown('<p class="section-header">Recent Threat Alerts</p>', unsafe_allow_html=True)
     
     if st.session_state.alerts:
-        for alert in st.session_state.alerts:
-            st.markdown(f"""
-            <div class="alert-card alert-{alert['type']}">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div class="alert-time">{alert['time']}</div>
-                    <span class="alert-type" style="background: {alert['color']}30; color: {alert['color']};">{alert['name']}</span>
+        for i, alert in enumerate(st.session_state.alerts):
+            with st.expander(f"[!] {alert['time']} - {alert['name']} ({alert['severity'].upper()})", expanded=False):
+                st.markdown(f"""
+                <div style="background: linear-gradient(90deg, {alert['color']}20 0%, transparent 100%); 
+                            padding: 1rem; border-radius: 8px; border-left: 4px solid {alert['color']}; margin-bottom: 1rem;">
+                    <h3 style="color: {alert['color']}; margin: 0;">{alert['name']}</h3>
+                    <p style="color: #94a3b8; margin: 0.5rem 0 0 0;">{alert['description']}</p>
                 </div>
-                <div class="alert-content">{alert['description']}</div>
-                <div class="alert-meta">
-                    <span>Confidence: {alert['confidence']:.1%}</span>
-                    <span>Latency: {alert['latency']:.2f}ms</span>
-                    <span class="severity-badge severity-{alert['severity']}">{alert['severity']}</span>
+                """, unsafe_allow_html=True)
+                
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.markdown(f"""
+                    <div style="background: #1e293b; padding: 1rem; border-radius: 8px;">
+                        <p style="color: #64748b; font-size: 0.75rem; margin: 0;">DETECTION TIME</p>
+                        <p style="color: #f8fafc; font-size: 1rem; font-weight: 600; margin: 0.25rem 0 0 0;">{alert.get('timestamp', alert['time'])}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with col2:
+                    st.markdown(f"""
+                    <div style="background: #1e293b; padding: 1rem; border-radius: 8px;">
+                        <p style="color: #64748b; font-size: 0.75rem; margin: 0;">CONFIDENCE</p>
+                        <p style="color: #22c55e; font-size: 1rem; font-weight: 600; margin: 0.25rem 0 0 0;">{alert['confidence']:.1%}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with col3:
+                    st.markdown(f"""
+                    <div style="background: #1e293b; padding: 1rem; border-radius: 8px;">
+                        <p style="color: #64748b; font-size: 0.75rem; margin: 0;">LATENCY</p>
+                        <p style="color: #3b82f6; font-size: 1rem; font-weight: 600; margin: 0.25rem 0 0 0;">{alert['latency']:.2f} ms</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                st.markdown("<p style='color: #94a3b8; font-weight: 600; margin-bottom: 0.5rem;'>AI MODEL INFORMATION</p>", unsafe_allow_html=True)
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 1rem; border-radius: 8px; border: 1px solid #3b82f6;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <p style="color: #64748b; font-size: 0.7rem; margin: 0;">DETECTION MODEL</p>
+                            <p style="color: #3b82f6; font-size: 1.1rem; font-weight: 600; margin: 0.25rem 0 0 0;">{alert.get('model_name', 'Unknown')}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="color: #64748b; font-size: 0.7rem; margin: 0;">MODEL TYPE</p>
+                            <p style="color: #8b5cf6; font-size: 0.9rem; font-weight: 500; margin: 0.25rem 0 0 0;">{'Anomaly Detection' if alert.get('model_name', '') in ['Isolation Forest', 'Neural Network'] else 'Classification'}</p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #334155;">
+                        <p style="color: #64748b; font-size: 0.7rem; margin: 0;">MODEL CHARACTERISTICS</p>
+                        <p style="color: #94a3b8; font-size: 0.8rem; margin: 0.25rem 0 0 0;">
+                            {'Unsupervised learning - detects anomalies without labeled data' if alert.get('model_name', '') == 'Isolation Forest' else 
+                             'Ensemble learning - uses multiple decision trees for robust classification' if alert.get('model_name', '') == 'Random Forest' else
+                             'Gradient boosting - optimized for high performance and accuracy' if alert.get('model_name', '') == 'XGBoost' else
+                             'Deep learning - neural network for complex pattern recognition' if alert.get('model_name', '') == 'Neural Network' else
+                             'Multi-class supervised learning - classifies threats into specific categories'}
+                        </p>
+                    </div>
                 </div>
-            </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                st.markdown("<p style='color: #94a3b8; font-weight: 600; margin-bottom: 0.5rem;'>PROCESS INFORMATION</p>", unsafe_allow_html=True)
+                proc_col1, proc_col2 = st.columns(2)
+                with proc_col1:
+                    st.markdown(f"""
+                    <div style="background: #0f172a; padding: 1rem; border-radius: 8px; border: 1px solid #334155;">
+                        <p style="color: #64748b; font-size: 0.7rem; margin: 0;">PROCESS NAME</p>
+                        <p style="color: #f8fafc; font-size: 0.9rem; font-weight: 500; margin: 0.25rem 0 0.75rem 0;">{alert.get('process_name', 'N/A')}</p>
+                        <p style="color: #64748b; font-size: 0.7rem; margin: 0;">PROCESS ID (PID)</p>
+                        <p style="color: #f8fafc; font-size: 0.9rem; font-weight: 500; margin: 0.25rem 0 0.75rem 0;">{alert.get('process_id', 'N/A')}</p>
+                        <p style="color: #64748b; font-size: 0.7rem; margin: 0;">USER</p>
+                        <p style="color: #f8fafc; font-size: 0.9rem; font-weight: 500; margin: 0.25rem 0 0 0;">{alert.get('user', 'N/A')}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with proc_col2:
+                    st.markdown(f"""
+                    <div style="background: #0f172a; padding: 1rem; border-radius: 8px; border: 1px solid #334155;">
+                        <p style="color: #64748b; font-size: 0.7rem; margin: 0;">PARENT PROCESS</p>
+                        <p style="color: #f8fafc; font-size: 0.9rem; font-weight: 500; margin: 0.25rem 0 0.75rem 0;">{alert.get('parent_process', 'N/A')}</p>
+                        <p style="color: #64748b; font-size: 0.7rem; margin: 0;">PARENT PID</p>
+                        <p style="color: #f8fafc; font-size: 0.9rem; font-weight: 500; margin: 0.25rem 0 0.75rem 0;">{alert.get('parent_pid', 'N/A')}</p>
+                        <p style="color: #64748b; font-size: 0.7rem; margin: 0;">THREADS / HANDLES</p>
+                        <p style="color: #f8fafc; font-size: 0.9rem; font-weight: 500; margin: 0.25rem 0 0 0;">{alert.get('threads', 'N/A')} / {alert.get('handles', 'N/A')}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                st.markdown("<p style='color: #94a3b8; font-weight: 600; margin-bottom: 0.5rem;'>FILE INFORMATION</p>", unsafe_allow_html=True)
+                st.markdown(f"""
+                <div style="background: #0f172a; padding: 1rem; border-radius: 8px; border: 1px solid #334155;">
+                    <p style="color: #64748b; font-size: 0.7rem; margin: 0;">FILE PATH</p>
+                    <p style="color: #fbbf24; font-size: 0.85rem; font-family: monospace; margin: 0.25rem 0 0.75rem 0; word-break: break-all;">{alert.get('file_path', 'N/A')}</p>
+                    <p style="color: #64748b; font-size: 0.7rem; margin: 0;">FILE HASH (SHA-256)</p>
+                    <p style="color: #94a3b8; font-size: 0.75rem; font-family: monospace; margin: 0.25rem 0 0 0; word-break: break-all;">{alert.get('file_hash', 'N/A')}</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                st.markdown("<p style='color: #94a3b8; font-weight: 600; margin-bottom: 0.5rem;'>NETWORK ACTIVITY</p>", unsafe_allow_html=True)
+                net_col1, net_col2, net_col3 = st.columns(3)
+                with net_col1:
+                    st.markdown(f"""
+                    <div style="background: #0f172a; padding: 1rem; border-radius: 8px; border: 1px solid #334155;">
+                        <p style="color: #64748b; font-size: 0.7rem; margin: 0;">SOURCE</p>
+                        <p style="color: #f8fafc; font-size: 0.85rem; margin: 0.25rem 0 0 0;">{alert.get('source_ip', 'N/A')}:{alert.get('source_port', 'N/A')}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with net_col2:
+                    st.markdown(f"""
+                    <div style="background: #0f172a; padding: 1rem; border-radius: 8px; border: 1px solid #334155;">
+                        <p style="color: #64748b; font-size: 0.7rem; margin: 0;">DESTINATION</p>
+                        <p style="color: #ef4444; font-size: 0.85rem; margin: 0.25rem 0 0 0;">{alert.get('dest_ip', 'N/A')}:{alert.get('dest_port', 'N/A')}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with net_col3:
+                    st.markdown(f"""
+                    <div style="background: #0f172a; padding: 1rem; border-radius: 8px; border: 1px solid #334155;">
+                        <p style="color: #64748b; font-size: 0.7rem; margin: 0;">DATA TRANSFER</p>
+                        <p style="color: #f8fafc; font-size: 0.85rem; margin: 0.25rem 0 0 0;">↑ {alert.get('bytes_sent', 0):,} B / ↓ {alert.get('bytes_received', 0):,} B</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                st.markdown("<p style='color: #94a3b8; font-weight: 600; margin-bottom: 0.5rem;'>RESOURCE USAGE</p>", unsafe_allow_html=True)
+                res_col1, res_col2, res_col3 = st.columns(3)
+                with res_col1:
+                    cpu = alert.get('cpu_usage', 0)
+                    cpu_color = '#22c55e' if cpu < 50 else '#f59e0b' if cpu < 80 else '#ef4444'
+                    st.markdown(f"""
+                    <div style="background: #0f172a; padding: 1rem; border-radius: 8px; border: 1px solid #334155;">
+                        <p style="color: #64748b; font-size: 0.7rem; margin: 0;">CPU USAGE</p>
+                        <p style="color: {cpu_color}; font-size: 1.25rem; font-weight: 600; margin: 0.25rem 0 0 0;">{cpu:.1f}%</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with res_col2:
+                    mem = alert.get('memory_usage', 0)
+                    st.markdown(f"""
+                    <div style="background: #0f172a; padding: 1rem; border-radius: 8px; border: 1px solid #334155;">
+                        <p style="color: #64748b; font-size: 0.7rem; margin: 0;">MEMORY USAGE</p>
+                        <p style="color: #3b82f6; font-size: 1.25rem; font-weight: 600; margin: 0.25rem 0 0 0;">{mem:.1f} MB</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with res_col3:
+                    st.markdown(f"""
+                    <div style="background: #0f172a; padding: 1rem; border-radius: 8px; border: 1px solid #334155;">
+                        <p style="color: #64748b; font-size: 0.7rem; margin: 0;">CONNECTIONS</p>
+                        <p style="color: #8b5cf6; font-size: 1.25rem; font-weight: 600; margin: 0.25rem 0 0 0;">{alert.get('network_connections', 0)}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
     else:
         st.markdown("""
         <div style="text-align: center; padding: 2rem; color: #64748b;">
@@ -679,7 +857,6 @@ def create_app():
         </div>
         """, unsafe_allow_html=True)
     
-    # ==================== FOOTER ====================
     st.markdown("""
     <div class="pro-footer">
         <p>Threat Classification System | Advanced Security Platform</p>
@@ -689,7 +866,6 @@ def create_app():
     </div>
     """, unsafe_allow_html=True)
     
-    # ==================== AUTO REFRESH ====================
     if st.session_state.running:
         time.sleep(refresh_interval)
         st.rerun()

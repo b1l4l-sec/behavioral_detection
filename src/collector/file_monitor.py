@@ -31,7 +31,6 @@ except ImportError:
     WATCHDOG_AVAILABLE = False
     logging.warning("مكتبة watchdog غير متوفرة | watchdog non disponible")
 
-# إعداد التسجيل | Configuration du logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -42,17 +41,17 @@ class FileEvent:
     حدث الملف | Événement fichier
     يمثل عملية واحدة على ملف
     """
-    timestamp: float          # الطابع الزمني بالميلي ثانية | Timestamp en ms
-    timestamp_iso: str        # الوقت بتنسيق ISO | Temps format ISO
-    event_type: str           # نوع الحدث | Type d'événement
-    operation: str            # العملية: created, deleted, modified, moved
-    path: str                 # مسار الملف | Chemin du fichier
-    filename: str             # اسم الملف | Nom du fichier
-    extension: str            # امتداد الملف | Extension
-    is_directory: bool        # هل هو مجلد | Est un répertoire
-    src_path: Optional[str]   # المسار المصدر (للنقل) | Chemin source
-    dest_path: Optional[str]  # المسار الهدف (للنقل) | Chemin destination
-    file_size: int            # حجم الملف | Taille du fichier
+    timestamp: float
+    timestamp_iso: str
+    event_type: str
+    operation: str
+    path: str
+    filename: str
+    extension: str
+    is_directory: bool
+    src_path: Optional[str]
+    dest_path: Optional[str]
+    file_size: int
     
     def to_dict(self) -> Dict:
         """تحويل إلى قاموس | Convertir en dictionnaire"""
@@ -83,13 +82,11 @@ class FileEventHandler(FileSystemEventHandler):
         التحقق مما إذا كان يجب معالجة الحدث
         Vérifier si l'événement doit être traité
         """
-        # استثناء المجلدات | Exclure les répertoires
         path_parts = Path(path).parts
         for excluded in self.excluded_dirs:
             if excluded in path_parts:
                 return False
         
-        # التحقق من الامتداد | Vérifier l'extension
         if self.watch_extensions:
             ext = Path(path).suffix.lower()
             if ext and ext not in self.watch_extensions and ext[1:] not in self.watch_extensions:
@@ -165,7 +162,6 @@ class FileEventHandler(FileSystemEventHandler):
         
         with self._lock:
             self._events.append(file_event)
-            # الحفاظ على آخر 50000 حدث | Garder les derniers 50000
             if len(self._events) > 50000:
                 self._events = self._events[-50000:]
         
@@ -260,7 +256,6 @@ class FileMonitor:
         self._observer = Observer()
         
         for directory in self.watch_directories:
-            # إنشاء المجلد إذا لم يكن موجوداً | Créer le répertoire s'il n'existe pas
             dir_path = Path(directory)
             if not dir_path.exists():
                 dir_path.mkdir(parents=True, exist_ok=True)
@@ -323,7 +318,7 @@ class SimpleFileMonitor:
         self._thread: Optional[threading.Thread] = None
         self._events: List[FileEvent] = []
         self._lock = threading.Lock()
-        self._prev_state: Dict[str, float] = {}  # path -> mtime
+        self._prev_state: Dict[str, float] = {}
         
         logger.info("تم تهيئة مراقب الملفات البسيط | Moniteur simple initialisé")
     
@@ -335,7 +330,6 @@ class SimpleFileMonitor:
         state = {}
         try:
             for root, dirs, files in os.walk(directory):
-                # استثناء المجلدات المخفية | Exclure les répertoires cachés
                 dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['__pycache__', 'node_modules']]
                 
                 for filename in files:
@@ -361,7 +355,6 @@ class SimpleFileMonitor:
         now = datetime.now()
         timestamp = time.time() * 1000
         
-        # الملفات الجديدة | Nouveaux fichiers
         for path in current_state:
             if path not in self._prev_state:
                 event = FileEvent(
@@ -379,7 +372,6 @@ class SimpleFileMonitor:
                 )
                 self._add_event(event)
         
-        # الملفات المحذوفة | Fichiers supprimés
         for path in self._prev_state:
             if path not in current_state:
                 event = FileEvent(
@@ -397,7 +389,6 @@ class SimpleFileMonitor:
                 )
                 self._add_event(event)
         
-        # الملفات المعدلة | Fichiers modifiés
         for path in current_state:
             if path in self._prev_state and current_state[path] != self._prev_state[path]:
                 event = FileEvent(
@@ -431,7 +422,6 @@ class SimpleFileMonitor:
         """حلقة المراقبة | Boucle de surveillance"""
         logger.info("بدء حلقة مراقبة الملفات البسيطة | Démarrage surveillance simple")
         
-        # المسح الأولي | Scan initial
         for directory in self.watch_directories:
             if os.path.exists(directory):
                 self._prev_state.update(self._scan_directory(directory))
@@ -451,7 +441,6 @@ class SimpleFileMonitor:
         if self._running:
             return
         
-        # إنشاء المجلدات | Créer les répertoires
         for directory in self.watch_directories:
             Path(directory).mkdir(parents=True, exist_ok=True)
         
@@ -476,7 +465,6 @@ class SimpleFileMonitor:
         return events
 
 
-# اختبار الوحدة | Test du module
 if __name__ == "__main__":
     import tempfile
     import shutil
@@ -485,7 +473,6 @@ if __name__ == "__main__":
     print("اختبار مراقب الملفات | Test du Moniteur de Fichiers")
     print("=" * 60)
     
-    # إنشاء مجلد اختبار | Créer un répertoire de test
     test_dir = tempfile.mkdtemp(prefix="file_monitor_test_")
     print(f"\nمجلد الاختبار | Répertoire de test: {test_dir}")
     
@@ -498,7 +485,6 @@ if __name__ == "__main__":
         }.get(event.operation, "❓")
         print(f"  {icon} [{event.operation}] {event.filename}")
     
-    # استخدام المراقب البسيط للاختبار | Utiliser le moniteur simple
     monitor = SimpleFileMonitor(
         watch_directories=[test_dir],
         interval=0.5,
@@ -509,30 +495,24 @@ if __name__ == "__main__":
     monitor.start()
     time.sleep(1)
     
-    # محاكاة عمليات الملفات | Simuler des opérations fichiers
     print("\nمحاكاة العمليات | Simulation des opérations:")
     
-    # إنشاء ملف | Créer un fichier
     test_file = os.path.join(test_dir, "test_file.txt")
     with open(test_file, "w") as f:
         f.write("Hello, World!")
     time.sleep(1)
     
-    # تعديل ملف | Modifier un fichier
     with open(test_file, "a") as f:
         f.write("\nMore content")
     time.sleep(1)
     
-    # حذف ملف | Supprimer un fichier
     os.remove(test_file)
     time.sleep(1)
     
-    # إيقاف المراقب | Arrêter le moniteur
     monitor.stop()
     
     events = monitor.get_events()
     print(f"\nإجمالي الأحداث المجمعة: {len(events)}")
     
-    # تنظيف | Nettoyage
     shutil.rmtree(test_dir)
     print("\nتم تنظيف مجلد الاختبار | Répertoire de test nettoyé")

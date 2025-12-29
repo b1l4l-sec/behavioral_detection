@@ -1,170 +1,91 @@
-# 🛡️ نظام الكشف السلوكي للبرامج المشبوهة
-# Système de Détection Comportementale de Programmes Suspects
-# Behavioral Detection System for Suspicious Programs
+# Système de Détection Comportementale
 
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+Un système complet de détection d'anomalies comportementales implémenté en Python, capable de distinguer en temps réel les comportements normaux des comportements suspects.
 
----
+> **Avertissement** : Ce projet est à des fins éducatives uniquement. L'exécution ou le téléchargement de logiciels malveillants réels est strictement interdit.
 
-## 📋 الوصف | Description
+## Description
 
-نظام كامل للكشف السلوكي عن الشذوذ في Python، قادر على التمييز في الوقت الفعلي بين السلوك الطبيعي والسلوك المشبوه.
+Le Système de Détection Comportementale est conçu pour surveiller les activités du système, collecter des données comportementales et utiliser des modèles d'apprentissage automatique pour identifier les anomalies. Il se compose de plusieurs éléments, notamment la collecte de données, l'ingénierie des fonctionnalités, la génération d'ensembles de données, la formation de modèles et la détection en temps réel.
 
-Système complet de détection comportementale d'anomalies en Python, capable de distinguer en temps réel un comportement normal d'un comportement suspect.
+## Fonctionnalités
 
-> ⚠️ **تحذير**: هذا المشروع تعليمي بحت. ممنوع منعاً باتاً تنفيذ أو تحميل برامج ضارة حقيقية.
-> 
-> ⚠️ **Avertissement**: Ce projet est purement éducatif. Interdiction formelle d'exécuter ou télécharger du vrai malware.
+- **Surveillance en temps réel** : Collecte des données à partir des processus système, de l'activité réseau et des événements du système de fichiers.
+- **Analyse comportementale** : Utilise l'apprentissage automatique pour classer les comportements comme bénins ou malveillants.
+- **Classification des menaces** : Identifie des types de menaces spécifiques tels que les rançongiciels (Ransomware), les enregistreurs de frappe (Keyloggers) et les balayages de ports (Port Scans).
+- **Tableau de bord interactif** : Fournit une interface Web professionnelle pour la surveillance et l'analyse.
+- **Outils CLI** : Interface en ligne de commande pour un contrôle et une automatisation efficaces.
 
----
+## Configuration Requise
 
-## 🏗️ الهيكل | Architecture
+- Python 3.9+
+- Docker (optionnel, pour le déploiement conteneurisé)
 
-```
-behavioral_detection/
-├── config/config.yaml          # التكوين | Configuration
-├── src/
-│   ├── collector/              # جمع الأحداث | Collecte
-│   ├── generator/              # توليد البيانات | Génération
-│   ├── features/               # هندسة الميزات | Features
-│   ├── models/                 # نماذج ML | Modèles
-│   ├── detector/               # الكشف الفوري | Détection
-│   └── interface/              # واجهة المستخدم | Interface
-├── data/                       # البيانات | Données
-└── tests/                      # الاختبارات | Tests
-```
+## Installation
 
----
+1.  Cloner le dépôt :
+    ```bash
+    git clone https://github.com/simox6v/behavioral-detection.git
+    cd behavioral-detection
+    ```
 
-## 🚀 التثبيت | Installation
+2.  Installer les dépendances :
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-```bash
-# استنساخ المشروع | Cloner le projet
-git clone <repository>
-cd behavioral_detection
+## Utilisation
 
-# إنشاء بيئة افتراضية | Créer un environnement virtuel
-python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
-# أو | ou
-.venv\Scripts\activate     # Windows
+Le système peut être géré à l'aide du script `run.py`.
 
-# تثبيت المتطلبات | Installer les dépendances
-pip install -r requirements.txt
+### Lancement des Composants
 
-# تثبيت المشروع | Installer le projet
-pip install -e .
-```
+-   **Tableau de bord** : Démarrer l'interface Web.
+    ```bash
+    python run.py dashboard
+    ```
 
----
+-   **Détecteur en temps réel** : Démarrer le moteur de détection.
+    ```bash
+    python run.py detector
+    ```
 
-## 📖 الاستخدام | Utilisation
+-   **Générateur de données** : Générer des ensembles de données d'entraînement.
+    ```bash
+    python run.py generator
+    ```
 
-### 1️⃣ جمع البيانات | Collecte de données
+-   **Entraînement des modèles** : Entraîner les modèles d'apprentissage automatique.
+    ```bash
+    python run.py trainer
+    ```
 
-```bash
-# تشغيل الجامع | Lancer le collecteur
-python -m src.collector.behavior_collector
+-   **Collecteur** : Démarrer le collecteur de données comportementales.
+    ```bash
+    python run.py collector
+    ```
 
-# توليد البيانات | Générer les données
-python -m src.generator.dataset_generator
-```
+-   **Tout exécuter** : Démarrer tous les composants simultanément.
+    ```bash
+    python run.py all
+    ```
 
-### 2️⃣ تدريب النماذج | Entraînement des modèles
+-   **Lancer les tests** : Exécuter la suite de tests.
+    ```bash
+    python run.py tests
+    ```
 
-```bash
-# تدريب جميع النماذج | Entraîner tous les modèles
-python -m src.models.train_models
+## Structure du Projet
 
-# تقييم الأداء | Évaluer les performances
-python -m src.models.model_evaluation
-```
+-   `src/collector` : Modules pour la surveillance du comportement du système (Processus, Réseaux, Fichiers).
+-   `src/detector` : Logique de détection en temps réel utilisant des modèles entraînés.
+-   `src/features` : Pipelines d'ingénierie des fonctionnalités et de traitement des données.
+-   `src/generator` : Scripts pour simuler des scénarios bénins et malveillants.
+-   `src/models` : Entraînement, évaluation et gestion des modèles.
+-   `src/interface` : Interfaces utilisateur (CLI et Tableau de bord Streamlit).
+-   `config` : Fichiers de configuration.
+-   `tests` : Tests unitaires et d'intégration.
 
-### 3️⃣ الكشف الفوري | Détection en temps réel
+## Licence
 
-```bash
-# واجهة Streamlit | Interface Streamlit
-streamlit run src/interface/streamlit_app.py
-
-# واجهة CLI | Interface CLI
-python -m src.interface.cli_interface
-```
-
----
-
-## 🎯 الميزات | Fonctionnalités
-
-### مراقبة النظام | Surveillance Système
-- ✅ مراقبة العمليات (CPU, RAM, I/O, threads)
-- ✅ مراقبة الشبكة (اتصالات، منافذ، عناوين IP)
-- ✅ مراقبة الملفات (إنشاء، حذف، تعديل، نقل)
-
-### نماذج التعلم الآلي | Modèles ML
-- ✅ Isolation Forest
-- ✅ One-Class SVM
-- ✅ Local Outlier Factor (LOF)
-- ✅ Random Forest
-- ✅ XGBoost
-
-### الواجهات | Interfaces
-- ✅ لوحة معلومات Streamlit تفاعلية
-- ✅ واجهة CLI ملونة
-
----
-
-## 📊 السيناريوهات المحاكاة | Scénarios Simulés
-
-| السيناريو | الوصف |
-|-----------|-------|
-| 🔥 Burst Files | إنشاء/حذف ملفات بسرعة عالية |
-| 🔍 Port Scan | مسح المنافذ السريع |
-| 📖 File Sniffing | قراءة متكررة لملفات حساسة |
-| 🔒 Ransomware-like | محاكاة تشفير الملفات |
-| 🔐 Brute-force | حلقات مكثفة |
-
----
-
-## 🧪 الاختبارات | Tests
-
-```bash
-# تشغيل جميع الاختبارات | Lancer tous les tests
-pytest tests/ -v
-
-# مع تغطية الكود | Avec couverture
-pytest tests/ -v --cov=src
-```
-
----
-
-## 🐳 Docker
-
-```bash
-# بناء الصورة | Construire l'image
-docker-compose -f docker/docker-compose.yml build
-
-# تشغيل | Lancer
-docker-compose -f docker/docker-compose.yml up
-```
-
----
-
-## 📝 المساهمة | Contribution
-
-نرحب بالمساهمات! يرجى فتح issue أو pull request.
-
-Les contributions sont les bienvenues! Veuillez ouvrir une issue ou une pull request.
-
----
-
-## 📄 الترخيص | Licence
-
-MIT License - انظر ملف LICENSE للتفاصيل.
-
----
-
-## 👨‍💻 المؤلف | Auteur
-
-تم التطوير بواسطة نظام الذكاء الاصطناعي.
-
-Développé avec l'aide de l'IA.
+Yarbi nvalidiw

@@ -1,7 +1,6 @@
 """
-مولد مجموعة البيانات | Générateur de Dataset | Dataset Generator
-يجمع بين السيناريوهات الحميدة والمشبوهة لتوليد مجموعة بيانات التدريب
-Combine les scénarios bénins et malveillants pour générer le dataset d'entraînement
+Dataset Generator
+Combines benign and malicious scenarios to generate training data
 """
 
 import os
@@ -16,17 +15,14 @@ from pathlib import Path
 from datetime import datetime
 import logging
 
-# استيراد السيناريوهات | Importer les scénarios
 from .benign_scenarios import BenignScenarios
 from .malicious_scenarios import MaliciousScenarios
 
-# استيراد الجامع | Importer le collecteur
 try:
     from ..collector.behavior_collector import BehaviorCollector
 except ImportError:
     BehaviorCollector = None
 
-# إعداد التسجيل | Configuration du logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -36,9 +32,8 @@ logger = logging.getLogger(__name__)
 
 class DatasetGenerator:
     """
-    مولد مجموعة البيانات | Générateur de Dataset
-    يولد مجموعة بيانات متوازنة للتدريب
-    Génère un dataset équilibré pour l'entraînement
+    Dataset Generator
+    Generates balanced training dataset
     """
     
     def __init__(
@@ -47,25 +42,22 @@ class DatasetGenerator:
         config_path: Optional[str] = None
     ):
         """
-        تهيئة المولد | Initialisation du générateur
+        Initialize the generator
         
         Args:
-            output_dir: مجلد الإخراج | Répertoire de sortie
-            config_path: مسار ملف التكوين | Chemin du fichier de configuration
+            output_dir: Output directory
+            config_path: Path to configuration file
         """
         self.config = self._load_config(config_path)
         
-        # مسارات الإخراج | Chemins de sortie
         self.output_dir = Path(output_dir or self.config.get('output_dir', './data'))
         self.raw_dir = self.output_dir / 'raw'
         self.processed_dir = self.output_dir / 'processed'
         self.sandbox_dir = self.output_dir / 'sandbox'
         
-        # إنشاء المجلدات | Créer les répertoires
         for d in [self.raw_dir, self.processed_dir, self.sandbox_dir]:
             d.mkdir(parents=True, exist_ok=True)
         
-        # إعداد السيناريوهات | Configurer les scénarios
         self.benign_scenarios = BenignScenarios(
             sandbox_dir=str(self.sandbox_dir / 'benign')
         )
@@ -73,18 +65,17 @@ class DatasetGenerator:
             sandbox_dir=str(self.sandbox_dir / 'malicious')
         )
         
-        # الإحصائيات | Statistiques
         self._stats = {
             'benign_events': 0,
             'malicious_events': 0,
             'generation_time': 0
         }
         
-        logger.info(f"تم تهيئة مولد البيانات | Générateur initialisé: {self.output_dir}")
+        logger.info(f"Dataset generator initialized: {self.output_dir}")
     
     def _load_config(self, config_path: Optional[str]) -> Dict:
         """
-        تحميل التكوين | Charger la configuration
+        Load configuration
         """
         default_config = {
             'output_dir': './data',
@@ -102,7 +93,7 @@ class DatasetGenerator:
                     if loaded and 'dataset' in loaded:
                         default_config.update(loaded['dataset'])
             except Exception as e:
-                logger.warning(f"خطأ في تحميل التكوين | Erreur chargement config: {e}")
+                logger.warning(f"Error loading config: {e}")
         
         return default_config
     
@@ -113,22 +104,20 @@ class DatasetGenerator:
         output_file: Optional[str] = None
     ) -> Tuple[str, int]:
         """
-        توليد مجموعة البيانات الحميدة
-        Générer le dataset bénin
+        Generate benign dataset
         
         Args:
-            target_events: عدد الأحداث المستهدف | Nombre d'événements cible
-            duration_per_scenario: مدة كل سيناريو | Durée par scénario
-            output_file: ملف الإخراج | Fichier de sortie
+            target_events: Target number of events
+            duration_per_scenario: Duration per scenario
+            output_file: Output file
             
         Returns:
-            مسار الملف وعدد الأحداث | Chemin et nombre d'événements
+            File path and event count
         """
         logger.info("=" * 60)
-        logger.info("🌿 توليد البيانات الحميدة | Génération données bénignes")
+        logger.info("🌿 Generating benign data")
         logger.info("=" * 60)
         
-        # تحديد ملف الإخراج | Définir le fichier de sortie
         if not output_file:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_file = str(self.raw_dir / f"benign_{timestamp}.jsonl")
@@ -140,7 +129,6 @@ class DatasetGenerator:
             nonlocal event_count
             event_count = count
         
-        # تشغيل السيناريوهات | Exécuter les scénarios
         scenarios = [
             ("web_browsing", self.benign_scenarios.simulate_web_browsing),
             ("office_work", self.benign_scenarios.simulate_office_work),
@@ -152,21 +140,18 @@ class DatasetGenerator:
         total_events = 0
         
         for name, func in scenarios:
-            logger.info(f"▶️ تشغيل | Exécution: {name}")
+            logger.info(f"▶️ Running: {name}")
             
-            # حساب المدة بناءً على الأحداث المتبقية
             remaining = target_events - total_events
             if remaining <= 0:
                 break
             
-            # تقدير المدة | Estimer la durée
             adjusted_duration = min(duration_per_scenario, max(5, remaining / 100))
             
             start_count = event_count
             func(duration=adjusted_duration, intensity='high', callback=on_event)
             scenario_events = event_count - start_count
             
-            # توليد أحداث للملف | Générer des événements pour le fichier
             for i in range(scenario_events):
                 event = {
                     'timestamp': time.time() * 1000 + i,
@@ -183,15 +168,14 @@ class DatasetGenerator:
                 events.append(event)
             
             total_events += scenario_events
-            logger.info(f"   ✅ {scenario_events} أحداث | événements")
+            logger.info(f"   ✅ {scenario_events} events")
         
-        # كتابة الملف | Écrire le fichier
         with open(output_file, 'w', encoding='utf-8') as f:
             for event in events:
                 f.write(json.dumps(event, ensure_ascii=False) + '\n')
         
         self._stats['benign_events'] = total_events
-        logger.info(f"✅ تم حفظ {total_events} حدث في | Sauvegardé: {output_file}")
+        logger.info(f"✅ Saved {total_events} events to: {output_file}")
         
         return output_file, total_events
     
@@ -202,23 +186,21 @@ class DatasetGenerator:
         output_file: Optional[str] = None
     ) -> Tuple[str, int]:
         """
-        توليد مجموعة البيانات المشبوهة
-        Générer le dataset malveillant
+        Generate malicious dataset
         
         Args:
-            target_events: عدد الأحداث المستهدف | Nombre d'événements cible
-            duration_per_scenario: مدة كل سيناريو | Durée par scénario
-            output_file: ملف الإخراج | Fichier de sortie
+            target_events: Target number of events
+            duration_per_scenario: Duration per scenario
+            output_file: Output file
             
         Returns:
-            مسار الملف وعدد الأحداث | Chemin et nombre d'événements
+            File path and event count
         """
         logger.info("=" * 60)
-        logger.info("🔴 توليد البيانات المشبوهة | Génération données malveillantes")
-        logger.info("⚠️ هذه محاكاة تعليمية فقط | Simulation éducative uniquement")
+        logger.info("🔴 Generating malicious data")
+        logger.info("⚠️ This is an educational simulation only")
         logger.info("=" * 60)
         
-        # تحديد ملف الإخراج | Définir le fichier de sortie
         if not output_file:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_file = str(self.raw_dir / f"malicious_{timestamp}.jsonl")
@@ -230,7 +212,6 @@ class DatasetGenerator:
             nonlocal event_count
             event_count = count
         
-        # تشغيل السيناريوهات | Exécuter les scénarios
         scenarios = [
             ("file_burst", lambda: self.malicious_scenarios.simulate_file_burst(
                 duration=duration_per_scenario, files_count=500, callback=on_event)),
@@ -247,13 +228,12 @@ class DatasetGenerator:
         total_events = 0
         
         for name, func in scenarios:
-            logger.info(f"▶️ تشغيل | Exécution: {name}")
+            logger.info(f"▶️ Running: {name}")
             
             start_count = event_count
             func()
             scenario_events = event_count - start_count
             
-            # توليد أحداث للملف | Générer des événements pour le fichier
             for i in range(scenario_events):
                 event = {
                     'timestamp': time.time() * 1000 + i,
@@ -271,15 +251,14 @@ class DatasetGenerator:
                 events.append(event)
             
             total_events += scenario_events
-            logger.info(f"   ✅ {scenario_events} أحداث | événements")
+            logger.info(f"   ✅ {scenario_events} events")
         
-        # كتابة الملف | Écrire le fichier
         with open(output_file, 'w', encoding='utf-8') as f:
             for event in events:
                 f.write(json.dumps(event, ensure_ascii=False) + '\n')
         
         self._stats['malicious_events'] = total_events
-        logger.info(f"✅ تم حفظ {total_events} حدث في | Sauvegardé: {output_file}")
+        logger.info(f"✅ Saved {total_events} events to: {output_file}")
         
         return output_file, total_events
     
@@ -291,27 +270,25 @@ class DatasetGenerator:
         shuffle: bool = True
     ) -> Tuple[str, Dict]:
         """
-        توليد مجموعة بيانات مجمعة
-        Générer un dataset combiné
+        Generate combined dataset
         
         Args:
-            benign_events: عدد الأحداث الحميدة | Nombre d'événements bénins
-            malicious_events: عدد الأحداث المشبوهة | Nombre d'événements malveillants
-            duration_per_scenario: مدة كل سيناريو | Durée par scénario
-            shuffle: خلط البيانات | Mélanger les données
+            benign_events: Number of benign events
+            malicious_events: Number of malicious events
+            duration_per_scenario: Duration per scenario
+            shuffle: Shuffle data
             
         Returns:
-            مسار الملف والإحصائيات | Chemin et statistiques
+            File path and statistics
         """
         import random
         
         logger.info("=" * 60)
-        logger.info("🎯 توليد مجموعة البيانات المجمعة | Génération dataset combiné")
+        logger.info("🎯 Generating combined dataset")
         logger.info("=" * 60)
         
         start_time = time.time()
         
-        # توليد البيانات | Générer les données
         benign_file, actual_benign = self.generate_benign_dataset(
             target_events=benign_events,
             duration_per_scenario=duration_per_scenario
@@ -322,13 +299,11 @@ class DatasetGenerator:
             duration_per_scenario=duration_per_scenario
         )
         
-        # دمج الملفات | Fusionner les fichiers
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         combined_file = str(self.processed_dir / f"combined_dataset_{timestamp}.jsonl")
         
         all_events = []
         
-        # قراءة الأحداث | Lire les événements
         with open(benign_file, 'r', encoding='utf-8') as f:
             for line in f:
                 all_events.append(json.loads(line))
@@ -337,11 +312,9 @@ class DatasetGenerator:
             for line in f:
                 all_events.append(json.loads(line))
         
-        # خلط إذا طُلب | Mélanger si demandé
         if shuffle:
             random.shuffle(all_events)
         
-        # كتابة الملف المجمع | Écrire le fichier combiné
         with open(combined_file, 'w', encoding='utf-8') as f:
             for event in all_events:
                 f.write(json.dumps(event, ensure_ascii=False) + '\n')
@@ -359,50 +332,47 @@ class DatasetGenerator:
             'malicious_file': malicious_file
         }
         
-        # حفظ الإحصائيات | Sauvegarder les statistiques
         stats_file = str(self.processed_dir / f"dataset_stats_{timestamp}.json")
         with open(stats_file, 'w', encoding='utf-8') as f:
             json.dump(stats, f, indent=2, ensure_ascii=False)
         
-        # طباعة الملخص | Afficher le résumé
         self._print_summary(stats)
         
         return combined_file, stats
     
     def _print_summary(self, stats: Dict):
         """
-        طباعة ملخص التوليد | Afficher le résumé de génération
+        Print generation summary
         """
         print("\n" + "=" * 60)
-        print("📊 ملخص توليد البيانات | Résumé de Génération")
+        print("📊 Dataset Generation Summary")
         print("=" * 60)
-        print(f"🌿 الأحداث الحميدة | Événements bénins: {stats['benign_events']}")
-        print(f"🔴 الأحداث المشبوهة | Événements malveillants: {stats['malicious_events']}")
-        print(f"📦 إجمالي الأحداث | Total événements: {stats['total_events']}")
-        print(f"⏱️  وقت التوليد | Temps de génération: {stats['generation_time']:.1f}s")
-        print(f"📁 الملف المجمع | Fichier combiné: {stats['combined_file']}")
+        print(f"🌿 Benign events: {stats['benign_events']}")
+        print(f"🔴 Malicious events: {stats['malicious_events']}")
+        print(f"📦 Total events: {stats['total_events']}")
+        print(f"⏱️  Generation time: {stats['generation_time']:.1f}s")
+        print(f"📁 Combined file: {stats['combined_file']}")
         print("=" * 60)
     
     def cleanup(self):
         """
-        تنظيف ملفات المحاكاة | Nettoyer les fichiers de simulation
+        Clean up simulation files
         """
         self.benign_scenarios.cleanup()
         self.malicious_scenarios.cleanup()
-        logger.info("تم التنظيف | Nettoyage effectué")
+        logger.info("Cleaned up")
     
     def validate_dataset(self, filepath: str) -> Dict:
         """
-        التحقق من صحة مجموعة البيانات
-        Valider le dataset
+        Validate dataset
         
         Args:
-            filepath: مسار الملف | Chemin du fichier
+            filepath: File path
             
         Returns:
-            نتائج التحقق | Résultats de validation
+            Validation results
         """
-        logger.info(f"🔍 التحقق من | Validation de: {filepath}")
+        logger.info(f"🔍 Validating: {filepath}")
         
         stats = {
             'total_lines': 0,
@@ -422,14 +392,12 @@ class DatasetGenerator:
                         event = json.loads(line)
                         stats['valid_events'] += 1
                         
-                        # عد التصنيفات | Compter les labels
                         label = event.get('label', 'unknown')
                         if label == 'benign':
                             stats['benign_count'] += 1
                         elif label == 'malicious':
                             stats['malicious_count'] += 1
                         
-                        # عد السيناريوهات | Compter les scénarios
                         scenario = event.get('scenario', event.get('event_type', 'unknown'))
                         stats['scenarios'][scenario] = stats['scenarios'].get(scenario, 0) + 1
                         
@@ -438,19 +406,18 @@ class DatasetGenerator:
                         stats['errors'].append(f"Line {i}: {str(e)}")
         
         except Exception as e:
-            logger.error(f"خطأ في التحقق | Erreur de validation: {e}")
+            logger.error(f"Validation error: {e}")
             stats['errors'].append(str(e))
         
-        # طباعة النتائج | Afficher les résultats
         print("\n" + "=" * 60)
-        print("📋 نتائج التحقق | Résultats de Validation")
+        print("📋 Validation Results")
         print("=" * 60)
-        print(f"📄 إجمالي الأسطر | Total lignes: {stats['total_lines']}")
-        print(f"✅ أحداث صالحة | Événements valides: {stats['valid_events']}")
-        print(f"❌ أحداث غير صالحة | Événements invalides: {stats['invalid_events']}")
-        print(f"🌿 حميدة | Bénins: {stats['benign_count']}")
-        print(f"🔴 مشبوهة | Malveillants: {stats['malicious_count']}")
-        print("\n📊 السيناريوهات | Scénarios:")
+        print(f"📄 Total lines: {stats['total_lines']}")
+        print(f"✅ Valid events: {stats['valid_events']}")
+        print(f"❌ Invalid events: {stats['invalid_events']}")
+        print(f"🌿 Benign: {stats['benign_count']}")
+        print(f"🔴 Malicious: {stats['malicious_count']}")
+        print("\n📊 Scenarios:")
         for scenario, count in sorted(stats['scenarios'].items()):
             print(f"   - {scenario}: {count}")
         print("=" * 60)
@@ -460,46 +427,46 @@ class DatasetGenerator:
 
 def main():
     """
-    الدالة الرئيسية | Fonction principale
+    Main function
     """
     parser = argparse.ArgumentParser(
-        description="مولد مجموعة البيانات | Générateur de Dataset"
+        description="Dataset Generator"
     )
     parser.add_argument(
         '--config', '-c',
         type=str,
         default='config/config.yaml',
-        help='مسار ملف التكوين | Chemin du fichier de configuration'
+        help='Path to configuration file'
     )
     parser.add_argument(
         '--output', '-o',
         type=str,
         default='./data',
-        help='مجلد الإخراج | Répertoire de sortie'
+        help='Output directory'
     )
     parser.add_argument(
         '--benign', '-b',
         type=int,
         default=10000,
-        help='عدد الأحداث الحميدة | Nombre d\'événements bénins'
+        help='Number of benign events'
     )
     parser.add_argument(
         '--malicious', '-m',
         type=int,
         default=8000,
-        help='عدد الأحداث المشبوهة | Nombre d\'événements malveillants'
+        help='Number of malicious events'
     )
     parser.add_argument(
         '--duration', '-d',
         type=float,
         default=30,
-        help='مدة كل سيناريو بالثواني | Durée par scénario en secondes'
+        help='Duration per scenario in seconds'
     )
     parser.add_argument(
         '--validate',
         type=str,
         default=None,
-        help='التحقق من ملف | Valider un fichier'
+        help='Validate a file'
     )
     
     args = parser.parse_args()
@@ -511,21 +478,18 @@ def main():
     
     try:
         if args.validate:
-            # التحقق من ملف موجود | Valider un fichier existant
             generator.validate_dataset(args.validate)
         else:
-            # توليد مجموعة بيانات جديدة | Générer un nouveau dataset
             combined_file, stats = generator.generate_combined_dataset(
                 benign_events=args.benign,
                 malicious_events=args.malicious,
                 duration_per_scenario=args.duration
             )
             
-            # التحقق من الملف المولد | Valider le fichier généré
             generator.validate_dataset(combined_file)
     
     except KeyboardInterrupt:
-        print("\n\n⚠️ توقف بواسطة المستخدم | Arrêt par l'utilisateur")
+        print("\n\n⚠️ Stopped by user")
     
     finally:
         generator.cleanup()

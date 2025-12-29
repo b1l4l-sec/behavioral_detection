@@ -12,7 +12,6 @@ from dataclasses import dataclass, asdict
 from datetime import datetime
 import logging
 
-# إعداد التسجيل | Configuration du logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -23,23 +22,23 @@ class ProcessEvent:
     حدث العملية | Événement de processus
     يمثل لقطة من حالة عملية معينة
     """
-    timestamp: float          # الطابع الزمني بالميلي ثانية | Timestamp en ms
-    timestamp_iso: str        # الوقت بتنسيق ISO | Temps format ISO
-    event_type: str           # نوع الحدث | Type d'événement
-    pid: int                  # معرف العملية | ID du processus
-    name: str                 # اسم العملية | Nom du processus
-    cpu_percent: float        # نسبة CPU | Pourcentage CPU
-    memory_percent: float     # نسبة الذاكرة | Pourcentage mémoire
-    memory_rss: int           # الذاكرة RSS بالبايت | Mémoire RSS en bytes
-    io_read_bytes: int        # بايتات القراءة | Bytes lus
-    io_write_bytes: int       # بايتات الكتابة | Bytes écrits
-    io_read_count: int        # عدد عمليات القراءة | Nombre de lectures
-    io_write_count: int       # عدد عمليات الكتابة | Nombre d'écritures
-    num_threads: int          # عدد الخيوط | Nombre de threads
-    num_fds: int              # عدد واصفات الملفات | Nombre de descripteurs
-    open_files_count: int     # عدد الملفات المفتوحة | Fichiers ouverts
-    connections_count: int    # عدد الاتصالات | Nombre de connexions
-    status: str               # حالة العملية | Statut du processus
+    timestamp: float
+    timestamp_iso: str
+    event_type: str
+    pid: int
+    name: str
+    cpu_percent: float
+    memory_percent: float
+    memory_rss: int
+    io_read_bytes: int
+    io_write_bytes: int
+    io_read_count: int
+    io_write_count: int
+    num_threads: int
+    num_fds: int
+    open_files_count: int
+    connections_count: int
+    status: str
     
     def to_dict(self) -> Dict:
         """تحويل إلى قاموس | Convertir en dictionnaire"""
@@ -77,7 +76,6 @@ class ProcessMonitor:
         self._events: List[ProcessEvent] = []
         self._lock = threading.Lock()
         
-        # تخزين القراءات السابقة لحساب الفروق | Stockage des lectures précédentes
         self._prev_io: Dict[int, tuple] = {}
         
         logger.info("تم تهيئة مراقب العمليات | Moniteur de processus initialisé")
@@ -93,19 +91,16 @@ class ProcessMonitor:
             حدث العملية أو None | Événement ou None
         """
         try:
-            # التحقق من اسم العملية | Vérifier le nom du processus
             name = proc.name()
             if name in self.excluded_processes:
                 return None
             
-            # جمع المعلومات | Collecter les informations
             with proc.oneshot():
                 pid = proc.pid
                 cpu = proc.cpu_percent()
                 mem = proc.memory_percent()
                 mem_info = proc.memory_info()
                 
-                # معلومات I/O | Informations I/O
                 try:
                     io = proc.io_counters()
                     io_read_bytes = io.read_bytes
@@ -116,40 +111,34 @@ class ProcessMonitor:
                     io_read_bytes = io_write_bytes = 0
                     io_read_count = io_write_count = 0
                 
-                # عدد الخيوط | Nombre de threads
                 try:
                     num_threads = proc.num_threads()
                 except psutil.AccessDenied:
                     num_threads = 0
                 
-                # واصفات الملفات (Linux فقط) | Descripteurs (Linux seulement)
                 try:
                     num_fds = proc.num_fds() if hasattr(proc, 'num_fds') else 0
                 except (psutil.AccessDenied, AttributeError):
                     num_fds = 0
                 
-                # الملفات المفتوحة | Fichiers ouverts
                 try:
                     open_files = len(proc.open_files())
                 except (psutil.AccessDenied, psutil.NoSuchProcess):
                     open_files = 0
                 
-                # الاتصالات | Connexions
                 try:
                     connections = len(proc.connections())
                 except (psutil.AccessDenied, psutil.NoSuchProcess):
                     connections = 0
                 
-                # الحالة | Statut
                 try:
                     status = proc.status()
                 except psutil.AccessDenied:
                     status = "unknown"
                 
-                # إنشاء الحدث | Créer l'événement
                 now = datetime.now()
                 event = ProcessEvent(
-                    timestamp=time.time() * 1000,  # بالميلي ثانية | en ms
+                    timestamp=time.time() * 1000,
                     timestamp_iso=now.isoformat(),
                     event_type="process_snapshot",
                     pid=pid,
@@ -204,7 +193,6 @@ class ProcessMonitor:
                 
                 with self._lock:
                     self._events.extend(events)
-                    # الحفاظ على آخر 10000 حدث فقط | Garder seulement les derniers 10000
                     if len(self._events) > 10000:
                         self._events = self._events[-10000:]
                 
@@ -278,33 +266,29 @@ class ProcessMonitor:
         }
 
 
-# اختبار الوحدة | Test du module
 if __name__ == "__main__":
     print("=" * 60)
     print("اختبار مراقب العمليات | Test du Moniteur de Processus")
     print("=" * 60)
     
     def on_event(event: ProcessEvent):
-        if event.cpu_percent > 5:  # فقط العمليات النشطة
+        if event.cpu_percent > 5:
             print(f"[{event.name}] CPU: {event.cpu_percent:.1f}% | "
                   f"RAM: {event.memory_percent:.1f}% | "
                   f"Threads: {event.num_threads}")
     
     monitor = ProcessMonitor(interval=1.0, callback=on_event)
     
-    # إحصائيات النظام | Stats système
     stats = monitor.get_system_stats()
     print(f"\nإحصائيات النظام | Stats Système:")
     print(f"  CPU: {stats['cpu_percent']}%")
     print(f"  RAM: {stats['memory_percent']}%")
     print(f"  العمليات | Processus: {stats['process_count']}")
     
-    # جمع لقطة واحدة | Collecter un snapshot
     print(f"\nالعمليات النشطة | Processus Actifs:")
     events = monitor.collect_once()
     print(f"تم جمع {len(events)} عملية | {len(events)} processus collectés")
     
-    # المراقبة المستمرة لمدة 5 ثوان | Surveillance pendant 5 secondes
     print(f"\nبدء المراقبة المستمرة (5 ثوان)...")
     monitor.start()
     time.sleep(5)
