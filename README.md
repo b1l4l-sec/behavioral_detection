@@ -75,6 +75,12 @@ Le système peut être géré à l'aide du script `run.py`.
     python run.py tests
     ```
 
+-   **Lancer** : Exécuter.
+    ```bash
+    .\.venv\Scripts\streamlit.exe run src\interface\streamlit_app.py
+    ```
+    
+
 ## Structure du Projet
 
 -   `src/collector` : Modules pour la surveillance du comportement du système (Processus, Réseaux, Fichiers).
